@@ -1,34 +1,39 @@
 """
-Scrape books.toscrape.com and store the results in a SQLite database.
+Scrape books.toscrape.com and store the results in a Supabase (Postgres) database.
 
 TEST MODE: only the first 10 books are scraped. Each book's own page is
 opened to collect the full details. Raise MAX_BOOKS / MAX_LISTING_PAGES
 below to scrape more (the full site is 50 pages x 20 books = 1000 books).
 
 Setup (once, in the VS Code terminal):
-    pip install requests beautifulsoup4
+    pip install -r requirements.txt
+    Copy .env.example to .env and paste your Supabase connection string
+    into DATABASE_URL (see README.md for where to find it).
 
 Run:
     python scrape_books.py
 
 Output:
-    books.db  (SQLite file next to this script, table "books")
+    Table "books" in your Supabase project (created automatically).
 """
 
+import os
 import re
-import sqlite3
+import sys
 import time
 from datetime import datetime, timezone
 from urllib.parse import urljoin
 
+import psycopg
 import requests
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+from psycopg.rows import dict_row
 
 # ---------------------------------------------------------------- settings
 LISTING_URL = "https://books.toscrape.com/catalogue/page-{}.html"
 MAX_LISTING_PAGES = 1    # catalogue pages to walk (each holds 20 books)
 MAX_BOOKS = 10           # stop after this many books; None = no limit
-DB_PATH = "books.db"
 DELAY_SECONDS = 0.5      # pause between requests, to be polite
 TIMEOUT_SECONDS = 15
 
@@ -101,102 +106,79 @@ def parse_book(url):
         "description": description_tag.get_text(strip=True) if description_tag else None,
         "image_url": urljoin(url, image_tag["src"]) if image_tag else None,
         "product_url": url,
-        "scraped_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "scraped_at": datetime.now(timezone.utc),
     }
 
 
 # ---------------------------------------------------------------- database
+def connect():
+    """Open a connection to Supabase using DATABASE_URL from the .env file."""
+    load_dotenv()
+    url = os.getenv("DATABASE_URL")
+    if not url or "[YOUR-PASSWORD]" in url:
+        sys.exit("DATABASE_URL is missing. Copy .env.example to .env and paste "
+                 "your Supabase connection string into it (see README.md).")
+    # prepare_threshold=None keeps it working with Supabase's connection pooler
+    return psycopg.connect(url, prepare_threshold=None)
+
+
 def init_db(conn):
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS books (
-            upc            TEXT PRIMARY KEY,
-            title          TEXT NOT NULL,
-            category       TEXT,
-            price_excl_tax REAL,
-            price_incl_tax REAL,
-            tax            REAL,
-            availability   INTEGER,
-            rating         INTEGER,
-            num_reviews    INTEGER,
-            product_type   TEXT,
-            description    TEXT,
-            image_url      TEXT,
-            product_url    TEXT,
-            scraped_at     TEXT
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS public.books (
+                upc            TEXT PRIMARY KEY,
+                title          TEXT NOT NULL,
+                category       TEXT,
+                price_excl_tax NUMERIC(10, 2),
+                price_incl_tax NUMERIC(10, 2),
+                tax            NUMERIC(10, 2),
+                availability   INTEGER,
+                rating         INTEGER,
+                num_reviews    INTEGER,
+                product_type   TEXT,
+                description    TEXT,
+                image_url      TEXT,
+                product_url    TEXT,
+                scraped_at     TIMESTAMPTZ
+            )
+            """
         )
-        """
-    )
+        # Keeps the table private: Supabase's public API can't read or change it,
+        # while this script (connecting as the database owner) still can.
+        cur.execute("ALTER TABLE public.books ENABLE ROW LEVEL SECURITY")
     conn.commit()
 
 
 def save_book(conn, book):
     """Insert a book, or update it if its UPC is already stored (safe to re-run)."""
     columns = list(book.keys())
-    placeholders = ", ".join(f":{c}" for c in columns)
-    updates = ", ".join(f"{c} = excluded.{c}" for c in columns if c != "upc")
-    conn.execute(
-        f"""
-        INSERT INTO books ({", ".join(columns)})
-        VALUES ({placeholders})
-        ON CONFLICT(upc) DO UPDATE SET {updates}
-        """,
-        book,
-    )
+    placeholders = ", ".join(f"%({c})s" for c in columns)
+    updates = ", ".join(f"{c} = EXCLUDED.{c}" for c in columns if c != "upc")
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""
+            INSERT INTO public.books ({", ".join(columns)})
+            VALUES ({placeholders})
+            ON CONFLICT (upc) DO UPDATE SET {updates}
+            """,
+            book,
+        )
     conn.commit()
-
-
-# ---------------------------------------------------------------- main
-def main():
-    conn = sqlite3.connect(DB_PATH)
-    init_db(conn)
-
-    saved, failed = 0, 0
-    done = False
-
-    for page in range(1, MAX_LISTING_PAGES + 1):
-        print(f"\nCatalogue page {page}")
-        try:
-            links = get_book_links(page)
-        except requests.RequestException as err:
-            print(f"  Could not load page {page}: {err}")
-            break
-
-        for link in links:
-            if MAX_BOOKS is not None and saved + failed >= MAX_BOOKS:
-                done = True
-                break
-            try:
-                book = parse_book(link)
-                save_book(conn, book)
-                saved += 1
-                print(f"  [{saved:>3}] {book['title'][:60]}  £{book['price_incl_tax']}  ({book['rating']}★)")
-            except (requests.RequestException, AttributeError, KeyError) as err:
-                failed += 1
-                print(f"  Failed: {link} -> {err}")
-
-        if done:
-            break
-
-    total = conn.execute("SELECT COUNT(*) FROM books").fetchone()[0]
-    print(f"\nDone. Saved {saved} books this run ({failed} failed). "
-          f"{total} books now in {DB_PATH}.")
-
-    show_first_row(conn)
-    conn.close()
 
 
 def show_first_row(conn, max_width=70):
     """Print the first row of the books table as a table, to check the data."""
-    conn.row_factory = sqlite3.Row
-    row = conn.execute("SELECT * FROM books ORDER BY rowid LIMIT 1").fetchone()
+    with conn.cursor(row_factory=dict_row) as cur:
+        cur.execute("SELECT * FROM public.books ORDER BY scraped_at, upc LIMIT 1")
+        row = cur.fetchone()
     if row is None:
         print("\nThe books table is empty.")
         return
 
     # One line per column; long values (like the description) are shortened
     rows = []
-    for column, value in dict(row).items():
+    for column, value in row.items():
         text = "" if value is None else str(value)
         if len(text) > max_width:
             text = text[: max_width - 3] + "..."
@@ -213,6 +195,48 @@ def show_first_row(conn, max_width=70):
     for column, text in rows:
         print(f"| {column:<{col_w}} | {text:<{val_w}} |")
     print(line)
+
+
+# ---------------------------------------------------------------- main
+def main():
+    with connect() as conn:
+        init_db(conn)
+
+        saved, failed = 0, 0
+        done = False
+
+        for page in range(1, MAX_LISTING_PAGES + 1):
+            print(f"\nCatalogue page {page}")
+            try:
+                links = get_book_links(page)
+            except requests.RequestException as err:
+                print(f"  Could not load page {page}: {err}")
+                break
+
+            for link in links:
+                if MAX_BOOKS is not None and saved + failed >= MAX_BOOKS:
+                    done = True
+                    break
+                try:
+                    book = parse_book(link)
+                    save_book(conn, book)
+                    saved += 1
+                    print(f"  [{saved:>3}] {book['title'][:60]}  £{book['price_incl_tax']}  ({book['rating']}★)")
+                except (requests.RequestException, AttributeError, KeyError, psycopg.Error) as err:
+                    conn.rollback()
+                    failed += 1
+                    print(f"  Failed: {link} -> {err}")
+
+            if done:
+                break
+
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM public.books")
+            total = cur.fetchone()[0]
+        print(f"\nDone. Saved {saved} books this run ({failed} failed). "
+              f"{total} books now in Supabase table 'books'.")
+
+        show_first_row(conn)
 
 
 if __name__ == "__main__":
