@@ -15,6 +15,7 @@ Output:
     books.db  (SQLite file next to this script, table "books")
 """
 
+import json
 import re
 import sqlite3
 import time
@@ -179,9 +180,22 @@ def main():
             break
 
     total = conn.execute("SELECT COUNT(*) FROM books").fetchone()[0]
-    conn.close()
     print(f"\nDone. Saved {saved} books this run ({failed} failed). "
           f"{total} books now in {DB_PATH}.")
+
+    show_first_row(conn)
+    conn.close()
+
+
+def show_first_row(conn):
+    """Print the first row of the books table as JSON, to check the data."""
+    conn.row_factory = sqlite3.Row
+    row = conn.execute("SELECT * FROM books ORDER BY rowid LIMIT 1").fetchone()
+    if row is None:
+        print("\nThe books table is empty.")
+        return
+    print("\nFirst row in the database:")
+    print(json.dumps(dict(row), indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
