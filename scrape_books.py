@@ -24,11 +24,21 @@ import time
 from datetime import datetime, timezone
 from urllib.parse import urljoin
 
-import psycopg
-import requests
-from bs4 import BeautifulSoup
-from dotenv import load_dotenv
-from psycopg.rows import dict_row
+try:
+    import psycopg
+    import requests
+    from bs4 import BeautifulSoup
+    from dotenv import load_dotenv
+    from psycopg.rows import dict_row
+except ImportError as err:
+    sys.exit(
+        f"Missing library: {err.name}\n"
+        f"Install the libraries into the Python that runs this script with:\n"
+        f"    {sys.executable} -m pip install -r requirements.txt"
+    )
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ENV_PATH = os.path.join(HERE, ".env")
 
 # ---------------------------------------------------------------- settings
 LISTING_URL = "https://books.toscrape.com/catalogue/page-{}.html"
@@ -48,7 +58,7 @@ GENERIC_HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
-load_dotenv()
+load_dotenv(ENV_PATH)  # always the .env next to this script, wherever it's run from
 
 session = requests.Session()
 session.headers.update(GENERIC_HEADERS)
@@ -131,12 +141,31 @@ def parse_book(url):
 # ---------------------------------------------------------------- database
 def connect():
     """Open a connection to Supabase using DATABASE_URL from the .env file."""
-    url = os.getenv("DATABASE_URL")
-    if not url or "[YOUR-PASSWORD]" in url:
-        sys.exit("DATABASE_URL is missing. Copy .env.example to .env and paste "
-                 "your Supabase connection string into it (see README.md).")
-    # prepare_threshold=None keeps it working with Supabase's connection pooler
-    return psycopg.connect(url, prepare_threshold=None)
+    if not os.path.exists(ENV_PATH):
+        sys.exit(f"No .env file found at {ENV_PATH}\n"
+                 "Copy .env.example to a file named exactly '.env' in this folder "
+                 "and put your Supabase connection string in it (see README.md).")
+    url = os.getenv("DATABASE_URL", "").strip()
+    if not url or "[" in url:
+        sys.exit("DATABASE_URL in .env is empty or still has a placeholder like "
+                 "[YOUR-PASSWORD] or [PROJECT-REF]. Paste your real Supabase "
+                 "connection string (see README.md).")
+    try:
+        # prepare_threshold=None keeps it working with Supabase's connection pooler
+        return psycopg.connect(url, prepare_threshold=None, connect_timeout=15)
+    except psycopg.OperationalError as err:
+        message = str(err).strip()
+        hint = "Check the connection string in .env (copy it again from Supabase → Connect)."
+        if "password authentication failed" in message:
+            hint = ("Wrong database password. Reset it in Supabase under Project Settings → "
+                    "Database, then update .env.")
+        elif any(s in message for s in ("resolve host", "translate host name", "nodename nor servname")):
+            hint = ("The host name in DATABASE_URL is wrong. Copy the Shared pooler URI "
+                    "from Supabase → Connect again.")
+        elif "Tenant or user not found" in message:
+            hint = ("The user name or region in DATABASE_URL is wrong. It must look like "
+                    "postgres.<project-ref> and match the host from Supabase → Connect.")
+        sys.exit(f"Could not connect to Supabase:\n  {message}\n{hint}")
 
 
 def init_db(conn):

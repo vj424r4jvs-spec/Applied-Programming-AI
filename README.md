@@ -6,10 +6,11 @@ Test mode: only the first 10 books are scraped. Change `MAX_LISTING_PAGES` and `
 
 ## Setup (once)
 
-1. Install the libraries:
+1. Install the libraries (on a Mac, use `python3`, not `python`):
    ```bash
-   pip install -r requirements.txt
+   python3 -m pip install -r requirements.txt
    ```
+   On Windows, use `python` instead of `python3`.
 2. Get your connection string: in the Supabase dashboard, open your project, click **Connect**, choose **Shared pooler**, and copy the URI.
 3. Copy `.env.example` to a new file called `.env`, then replace the `DATABASE_URL` value with the shared pooler URI from Supabase. Replace `[YOUR-PASSWORD]` in that URI with your database password. If your password contains special characters, percent-encode them in the URI.
    `.env` is in `.gitignore`, so your password never ends up on GitHub.
@@ -17,8 +18,10 @@ Test mode: only the first 10 books are scraped. Change `MAX_LISTING_PAGES` and `
 ## Run
 
 ```bash
-python scrape_books.py
+python3 scrape_books.py
 ```
+
+If something is set up wrong (a missing library, no `.env`, a wrong password or host), the script stops with a message that says what to fix.
 
 The script creates the `books` table the first time it runs. Re-running it updates existing books instead of adding duplicates. At the end it prints the first row of the table so you can check the data.
 
