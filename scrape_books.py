@@ -15,7 +15,6 @@ Output:
     books.db  (SQLite file next to this script, table "books")
 """
 
-import json
 import re
 import sqlite3
 import time
@@ -187,15 +186,33 @@ def main():
     conn.close()
 
 
-def show_first_row(conn):
-    """Print the first row of the books table as JSON, to check the data."""
+def show_first_row(conn, max_width=70):
+    """Print the first row of the books table as a table, to check the data."""
     conn.row_factory = sqlite3.Row
     row = conn.execute("SELECT * FROM books ORDER BY rowid LIMIT 1").fetchone()
     if row is None:
         print("\nThe books table is empty.")
         return
+
+    # One line per column; long values (like the description) are shortened
+    rows = []
+    for column, value in dict(row).items():
+        text = "" if value is None else str(value)
+        if len(text) > max_width:
+            text = text[: max_width - 3] + "..."
+        rows.append((column, text))
+
+    col_w = max(len("Column"), *(len(c) for c, _ in rows))
+    val_w = max(len("Value"), *(len(v) for _, v in rows))
+    line = f"+-{'-' * col_w}-+-{'-' * val_w}-+"
+
     print("\nFirst row in the database:")
-    print(json.dumps(dict(row), indent=2, ensure_ascii=False))
+    print(line)
+    print(f"| {'Column':<{col_w}} | {'Value':<{val_w}} |")
+    print(line)
+    for column, text in rows:
+        print(f"| {column:<{col_w}} | {text:<{val_w}} |")
+    print(line)
 
 
 if __name__ == "__main__":
