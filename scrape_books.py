@@ -39,8 +39,26 @@ TIMEOUT_SECONDS = 15
 
 RATING_WORDS = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
 
+# Generic headers, the same as a very common desktop browser sends. Without
+# these, requests announces itself as "python-requests/<version>".
+GENERIC_HEADERS = {
+    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                   "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
+load_dotenv()
+
 session = requests.Session()
-session.headers["User-Agent"] = "Mozilla/5.0 (books-scraper-practice)"
+session.headers.update(GENERIC_HEADERS)
+session.trust_env = False  # ignore system proxy settings; only PROXY_URL is used
+
+# Optional: send all scraping traffic through a proxy so the site sees the
+# proxy's IP address instead of yours. Set PROXY_URL in .env (see README.md).
+PROXY_URL = os.getenv("PROXY_URL", "").strip()
+if PROXY_URL:
+    session.proxies = {"http": PROXY_URL, "https": PROXY_URL}
 
 
 # ---------------------------------------------------------------- helpers
@@ -113,7 +131,6 @@ def parse_book(url):
 # ---------------------------------------------------------------- database
 def connect():
     """Open a connection to Supabase using DATABASE_URL from the .env file."""
-    load_dotenv()
     url = os.getenv("DATABASE_URL")
     if not url or "[YOUR-PASSWORD]" in url:
         sys.exit("DATABASE_URL is missing. Copy .env.example to .env and paste "
@@ -198,7 +215,23 @@ def show_first_row(conn, max_width=70):
 
 
 # ---------------------------------------------------------------- main
+def show_public_ip():
+    """Print the IP address websites see for this script's requests."""
+    try:
+        ip = session.get("https://api.ipify.org", timeout=TIMEOUT_SECONDS).text.strip()
+    except requests.RequestException as err:
+        sys.exit(f"Could not connect through the proxy: {err}\n"
+                 "Stopping, so nothing is sent from your real IP address.")
+    print(f"Proxy: ON. Websites see this IP address: {ip}")
+
+
 def main():
+    if PROXY_URL:
+        show_public_ip()
+    else:
+        print("Proxy: OFF. Websites see your own IP address "
+              "(set PROXY_URL in .env to change that).")
+
     with connect() as conn:
         init_db(conn)
 

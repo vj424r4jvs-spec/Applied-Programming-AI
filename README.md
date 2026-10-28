@@ -23,3 +23,10 @@ python scrape_books.py
 The script creates the `books` table the first time it runs. Re-running it updates existing books instead of adding duplicates. At the end it prints the first row of the table so you can check the data.
 
 You can also view the data in the Supabase dashboard under **Table Editor → books**.
+
+## Privacy
+
+- The script sends generic browser headers, so the site doesn't see "python-requests", your operating system or your real browser. It sends no cookies and runs no JavaScript, so there is no browser fingerprint.
+- **Your IP address** can only be hidden by sending the traffic through someone else's server. Set `PROXY_URL` in `.env` (examples are in `.env.example`). At startup the script prints the IP address websites will see. If the proxy can't be reached, it stops instead of falling back to your real IP.
+- Alternative without any setup in the code: turn on a VPN on your computer before running the script.
+- The connection to Supabase does not go through the proxy. It's your own database, so it only sees your IP.
