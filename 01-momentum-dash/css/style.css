@@ -1,0 +1,149 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #fff;
+  /* Shown while no photo has loaded yet, or when offline: Atlantic blue to Alentejo gold */
+  background: linear-gradient(160deg, #0f3d56 0%, #2b6f7a 55%, #c9a24a 100%);
+}
+
+/* ---------- background photo layers ---------- */
+.bg {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.bg.visible { opacity: 1; }
+.shade {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 100%);
+  pointer-events: none;
+}
+
+header, main, footer, aside { position: relative; z-index: 1; }
+.top, .bottom, .center { text-shadow: 0 1px 6px rgba(0,0,0,0.55); }
+
+/* ---------- top bar: weather + settings ---------- */
+.top {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+}
+.weather { text-align: right; }
+.weather-now { font-size: 2rem; font-weight: 300; }
+.weather-icon { margin-right: 0.35rem; }
+.weather-place { font-size: 0.95rem; opacity: 0.9; }
+.forecast {
+  display: flex;
+  gap: 0.9rem;
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  font-size: 0.8rem;
+  justify-content: flex-end;
+}
+.forecast li { text-align: center; min-width: 2.6rem; }
+.forecast .day { opacity: 0.8; display: block; }
+.forecast .ico { font-size: 1.1rem; display: block; }
+.forecast .min { opacity: 0.7; }
+
+.icon-button, .link-button {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  text-shadow: inherit;
+}
+.icon-button { font-size: 1.5rem; opacity: 0.8; }
+.icon-button:hover, .link-button:hover { opacity: 1; }
+.link-button { opacity: 0.7; font-size: 1rem; }
+
+/* ---------- centre: clock, greeting, focus ---------- */
+.center {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.center > * { pointer-events: auto; }
+.clock { font-size: clamp(5rem, 14vw, 10rem); font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+.greeting { font-size: clamp(1.8rem, 4vw, 3.2rem); font-weight: 500; margin: 0.4rem 0 2rem; }
+
+.focus { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
+.focus label { font-size: 1.5rem; }
+.focus input {
+  width: min(32rem, 80vw);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid rgba(255,255,255,0.8);
+  color: #fff;
+  font-size: 1.6rem;
+  text-align: center;
+  padding: 0.2rem;
+  outline: none;
+}
+.focus-done { display: flex; flex-direction: column; align-items: center; font-size: 1.8rem; gap: 0.3rem; }
+.focus-done[hidden], .focus[hidden] { display: none; }
+.focus-label { font-size: 0.85rem; letter-spacing: 0.2em; opacity: 0.85; }
+
+/* ---------- bottom: photo credit + quote ---------- */
+.bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  align-items: end;
+}
+.photo-credit { font-size: 0.75rem; opacity: 0.85; display: flex; flex-direction: column; gap: 0.15rem; }
+.photo-credit a { color: inherit; }
+.photo-credit .link-button { align-self: flex-start; padding: 0; }
+.quote { grid-column: 2; margin: 0; text-align: center; }
+.quote p { font-size: 1.1rem; margin: 0 0 0.3rem; }
+.quote cite { font-size: 0.9rem; opacity: 0.8; }
+.quote cite::before { content: "— "; }
+
+/* ---------- settings panel ---------- */
+.settings {
+  position: fixed;
+  top: 4rem;
+  right: 1.5rem;
+  width: 20rem;
+  padding: 1.2rem;
+  border-radius: 12px;
+  background: rgba(20, 28, 36, 0.92);
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  z-index: 5;
+  font-size: 0.9rem;
+}
+.settings[hidden] { display: none; }
+.settings h2 { margin: 0; font-size: 1.1rem; }
+.settings label { display: flex; flex-direction: column; gap: 0.3rem; }
+.settings label.inline { flex-direction: row; align-items: center; gap: 0.4rem; }
+.settings fieldset { border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; display: flex; flex-direction: column; gap: 0.4rem; }
+.settings input[type=text], .settings select { padding: 0.35rem 0.5rem; border-radius: 6px; border: 1px solid #555; background: #1d262f; color: #fff; }
+.settings button { padding: 0.35rem 0.7rem; border-radius: 6px; border: 1px solid #555; background: #2c3945; color: #fff; cursor: pointer; }
+.settings button.primary { background: #2b8a7e; border-color: #2b8a7e; }
+.city-search { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.city-search input { flex: 1; }
+.city-results { list-style: none; margin: 0; padding: 0; width: 100%; }
+.city-results li button { width: 100%; text-align: left; margin-top: 0.2rem; }
+.hint { margin: 0; opacity: 0.75; font-size: 0.8rem; }

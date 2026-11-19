@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>New Tab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Two stacked layers so a new photo can fade in over the old one -->
+  <div id="bg" class="bg"></div>
+  <div id="bg-next" class="bg"></div>
+  <div class="shade"></div>
+
+  <header class="top">
+    <section id="weather" class="weather" aria-live="polite">
+      <div class="weather-now">
+        <span id="weather-icon" class="weather-icon">…</span>
+        <span id="weather-temp" class="weather-temp"></span>
+      </div>
+      <div id="weather-place" class="weather-place">Loading weather…</div>
+      <ol id="forecast" class="forecast"></ol>
+    </section>
+    <button id="settings-toggle" class="icon-button" title="Settings" aria-label="Settings">⚙</button>
+  </header>
+
+  <main class="center">
+    <div id="clock" class="clock">--:--</div>
+    <h1 id="greeting" class="greeting">Olá</h1>
+
+    <form id="focus-form" class="focus">
+      <label for="focus-input">What is your main focus for today?</label>
+      <input id="focus-input" type="text" maxlength="80" autocomplete="off">
+    </form>
+    <div id="focus-done" class="focus-done" hidden>
+      <span class="focus-label">TODAY</span>
+      <span id="focus-text"></span>
+      <button id="focus-clear" class="link-button" title="Clear focus">✕</button>
+    </div>
+  </main>
+
+  <footer class="bottom">
+    <div id="photo-credit" class="photo-credit">
+      <span id="photo-title"></span>
+      <a id="photo-link" target="_blank" rel="noopener noreferrer"></a>
+      <button id="next-photo" class="link-button" title="Next photo">⟳</button>
+    </div>
+    <blockquote id="quote" class="quote">
+      <p id="quote-text"></p>
+      <cite id="quote-author"></cite>
+    </blockquote>
+  </footer>
+
+  <aside id="settings" class="settings" hidden>
+    <h2>Settings</h2>
+    <label>Your name
+      <input id="set-name" type="text" maxlength="30" placeholder="e.g. Adrian">
+    </label>
+
+    <fieldset>
+      <legend>Weather location</legend>
+      <label class="inline"><input type="radio" name="loc-mode" value="auto"> Use my current location</label>
+      <label class="inline"><input type="radio" name="loc-mode" value="city"> Choose a city</label>
+      <div id="city-search" class="city-search">
+        <input id="set-city" type="text" placeholder="e.g. Porto">
+        <button id="city-find" type="button">Search</button>
+        <ul id="city-results" class="city-results"></ul>
+      </div>
+      <p id="city-current" class="hint"></p>
+    </fieldset>
+
+    <label>Temperature unit
+      <select id="set-unit">
+        <option value="celsius">°C</option>
+        <option value="fahrenheit">°F</option>
+      </select>
+    </label>
+
+    <label>Change background
+      <select id="set-bg-mode">
+        <option value="tab">Every new tab</option>
+        <option value="hour">Every hour</option>
+        <option value="day">Once a day</option>
+      </select>
+    </label>
+
+    <button id="settings-close" type="button" class="primary">Done</button>
+  </aside>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
