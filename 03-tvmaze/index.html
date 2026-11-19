@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TV Series Episode Finder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>📺 TV Series Episode Finder</h1>
+    <p class="sub">Search a series by name, then see all its episodes. Data from the <a href="https://www.tvmaze.com/api" target="_blank" rel="noopener">TVmaze API</a>.</p>
+    <form id="search-form" class="search">
+      <input id="search-input" type="search" placeholder="e.g. The Big Bang Theory" autocomplete="off" required>
+      <button type="submit">Search</button>
+    </form>
+    <div id="recent" class="recent"></div>
+  </header>
+
+  <main>
+    <p id="status" class="status" aria-live="polite"></p>
+
+    <!-- Step 1: results of the name search -->
+    <section id="results-section" hidden>
+      <h2>Step 1 · Choose a series <span class="hint">(name → ID)</span></h2>
+      <ul id="results" class="results"></ul>
+    </section>
+
+    <!-- Step 2: the chosen show and its episodes -->
+    <section id="show-section" hidden>
+      <button id="back" class="link">← back to results</button>
+      <div id="show" class="show"></div>
+
+      <h2>Step 2 · All episodes <span class="hint">(ID → episodes)</span></h2>
+      <div class="toolbar">
+        <select id="season-filter"></select>
+        <input id="episode-filter" type="search" placeholder="Filter episodes by title…">
+        <button id="download">Download CSV</button>
+      </div>
+      <p id="episode-count" class="hint"></p>
+      <div id="episodes"></div>
+    </section>
+
+    <!-- Shows which API requests the page made: helps to understand the flow -->
+    <details class="api-log" open>
+      <summary>API requests made by this page</summary>
+      <ol id="api-log"></ol>
+    </details>
+  </main>
+
+  <footer>
+    Data © <a href="https://www.tvmaze.com" target="_blank" rel="noopener">TVmaze</a>, licensed CC BY-SA.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
