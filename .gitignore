@@ -1,5 +1,30 @@
+# ---- secrets and local configuration (never commit) ----
 .env
-books.db
+.env.*
+!.env.example
+config.local.js
+
+# ---- generated data ----
+*.db
+*.sqlite
+*.sqlite3
+*.csv
+
+# ---- Python ----
 __pycache__/
+*.pyc
 .venv/
 venv/
+.streamlit/secrets.toml
+
+# ---- Node / packaging ----
+node_modules/
+*.zip
+*.crx
+*.pem
+
+# ---- editors and OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

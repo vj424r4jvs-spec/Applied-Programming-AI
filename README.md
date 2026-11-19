@@ -1,35 +1,29 @@
-# Practice Scraper
+# Applied Programming & AI — Individual Submission
 
-Scrapes [books.toscrape.com](https://books.toscrape.com) and saves the books to a `books` table in your Supabase database.
+This repository contains my three individual projects. Each one has its own folder with a
+README (purpose, data collection, persistence, user interaction, setup, learning, limitations),
+a screenshot and an `AUDIT.md` recording the publication audit.
 
-Test mode: only the first 10 books are scraped. Change `MAX_LISTING_PAGES` and `MAX_BOOKS` at the top of `scrape_books.py` to scrape more.
+| # | Project | What it does | Folder |
+|---|---------|--------------|--------|
+| 1 | Momentum Dash replica | Chrome extension that replaces the new-tab page with Portuguese nature photos, the local weather forecast and a daily quote | [`01-momentum-dash/`](01-momentum-dash/) |
+| 2 | Books to Scrape | Scrapes books.toscrape.com, stores the books in a SQLite database and shows them in a Streamlit web app | [`02-books-to-scrape/`](02-books-to-scrape/) |
+| 3 | TVmaze API | Web page that searches a TV series by name, looks up its ID and lists all its episodes | [`03-tvmaze/`](03-tvmaze/) |
 
-## Setup (once)
+## Repository layout
 
-1. Install the libraries (on a Mac, use `python3`, not `python`):
-   ```bash
-   python3 -m pip install -r requirements.txt
-   ```
-   On Windows, use `python` instead of `python3`.
-2. Get your connection string: in the Supabase dashboard, open your project, click **Connect**, choose **Shared pooler**, and copy the URI.
-3. Copy `.env.example` to a new file called `.env`, then replace the `DATABASE_URL` value with the shared pooler URI from Supabase. Replace `[YOUR-PASSWORD]` in that URI with your database password. If your password contains special characters, percent-encode them in the URI.
-   `.env` is in `.gitignore`, so your password never ends up on GitHub.
-
-## Run
-
-```bash
-python3 scrape_books.py
+```
+.
+├── README.md              ← this file
+├── .gitignore             ← shared exclusions (secrets, databases, caches, editor files)
+├── 01-momentum-dash/      ← Chrome extension (HTML, CSS, JavaScript)
+├── 02-books-to-scrape/    ← Python scraper + SQLite + Streamlit
+└── 03-tvmaze/             ← HTML + JavaScript page using the TVmaze API
 ```
 
-If something is set up wrong (a missing library, no `.env`, a wrong password or host), the script stops with a message that says what to fix.
+## Tools used
 
-The script creates the `books` table the first time it runs. Re-running it updates existing books instead of adding duplicates. At the end it prints the first row of the table so you can check the data.
+VS Code, Git/GitHub, Python 3, Google Chrome and Claude (AI assistant). How AI was used is
+described in the "Limitations and assistance" section of each project README.
 
-You can also view the data in the Supabase dashboard under **Table Editor → books**.
-
-## Privacy
-
-- The script sends generic browser headers, so the site doesn't see "python-requests", your operating system or your real browser. It sends no cookies and runs no JavaScript, so there is no browser fingerprint.
-- **Your IP address** can only be hidden by sending the traffic through someone else's server. Set `PROXY_URL` in `.env` (examples are in `.env.example`). At startup the script prints the IP address websites will see. If the proxy can't be reached, it stops instead of falling back to your real IP.
-- Alternative without any setup in the code: turn on a VPN on your computer before running the script.
-- The connection to Supabase does not go through the proxy. It's your own database, so it only sees your IP.
+No project needs an API key or password, so there is nothing secret to configure.
