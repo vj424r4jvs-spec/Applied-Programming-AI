@@ -49,7 +49,7 @@ When the page is opened as a normal web page (for testing, not as an extension),
 
 Requirements: Google Chrome (or another Chromium browser such as Edge or Brave). No installation of packages, no build step.
 
-1. Clone the repository: `git clone https://github.com/vj424r4jvs-spec/<repo-name>.git`
+1. Clone the repository: `git clone https://github.com/vj424r4jvs-spec/Applied-Programming-AI.git`
 2. Open `chrome://extensions` and switch on **Developer mode** (top right).
 3. Click **Load unpacked** and select the folder `01-momentum-dash`.
 4. Open a new tab. If Chrome asks whether to keep the changed new-tab page, choose **Keep it**.

@@ -41,7 +41,7 @@ look at a single book and see charts.
 
 ## Setup
 
-Requirements: Python 3.10 or newer, internet connection.
+Requirements: Python 3.9 or newer (the `python3` that comes with macOS works), internet connection.
 
 ```bash
 cd 02-books-to-scrape
